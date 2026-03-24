@@ -4,13 +4,13 @@ const DEFAULT_ZOOM = 11;
 
 // Recognizable emoji icons for each alert type
 const alertIcons = {
-  crime:        { emoji: "🚨",      color: "#ff5252", border: "#c62828" },   // Police siren
-  protest:      { emoji: "✊",       color: "#448aff", border: "#1565c0" },   // Raised fist / protest
-  "mass-action": { emoji: "🚧",     color: "#ffab40", border: "#ef6c00" },   // Road barrier
-  riot:         { emoji: "🔥",      color: "#ab47bc", border: "#6a1b9a" },   // Fire / burning
-  disruption:   { emoji: "🚧",     color: "#ffeb3b", border: "#f9a825" },   // Traffic cone / block
-  suspicious:   { emoji: "👀",      color: "#a1887f", border: "#5d4037" },   // Eyes / suspicious
-  other:        { emoji: "⚠️",      color: "#90a4ae", border: "#455a64" }    // Warning
+  crime:        { emoji: "🚨", color: "#ff5252", border: "#c62828" },
+  protest:      { emoji: "✊", color: "#448aff", border: "#1565c0" },
+  "mass-action": { emoji: "🚧", color: "#ffab40", border: "#ef6c00" },
+  riot:         { emoji: "🔥", color: "#ab47bc", border: "#6a1b9a" },
+  disruption:   { emoji: "🚧", color: "#ffeb3b", border: "#f9a825" },
+  suspicious:   { emoji: "👀", color: "#a1887f", border: "#5d4037" },
+  other:        { emoji: "⚠️", color: "#90a4ae", border: "#455a64" }
 };
 
 // Global references
@@ -57,24 +57,13 @@ function initMap(containerId = 'map') {
 
       return L.divIcon({
         html: `
-          <div style="
-            background-color: ${iconInfo.color};
-            color: white;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            border: 3px solid ${iconInfo.border};
-            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-            text-shadow: 0 0 4px rgba(0,0,0,0.8);
-          ">
+          <div style="background-color: ${iconInfo.color}; color: white; width: 44px; height: 44px; border-radius: 50%; 
+                      display: flex; align-items: center; justify-content: center; font-size: 22px; 
+                      border: 3px solid ${iconInfo.border}; box-shadow: 0 3px 10px rgba(0,0,0,0.4); text-shadow: 0 0 4px rgba(0,0,0,0.8);">
             ${iconInfo.emoji}
           </div>
         `,
-        className: '',           // Important: remove default Leaflet styles
+        className: '',
         iconSize: [44, 44],
         iconAnchor: [22, 22]
       });
@@ -93,9 +82,7 @@ function initMap(containerId = 'map') {
 }
 
 function enableReportClick() {
-  if (clickListener) {
-    window.mapInstance.off('click', clickListener);
-  }
+  if (clickListener) window.mapInstance.off('click', clickListener);
 
   clickListener = function(e) {
     const lat = e.latlng.lat.toFixed(5);
@@ -127,23 +114,11 @@ function addMarkerToCluster(alert) {
   const typeKey = alert.type?.toLowerCase().trim() || 'other';
   const iconInfo = alertIcons[typeKey] || alertIcons.other;
 
-  // Create custom emoji marker
   const markerIcon = L.divIcon({
     html: `
-      <div style="
-        background-color: ${iconInfo.color};
-        color: white;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        border: 3px solid ${iconInfo.border};
-        box-shadow: 0 3px 10px rgba(0,0,0,0.35);
-        text-shadow: 0 0 3px rgba(0,0,0,0.7);
-      ">
+      <div style="background-color: ${iconInfo.color}; color: white; width: 38px; height: 38px; border-radius: 50%; 
+                  display: flex; align-items: center; justify-content: center; font-size: 20px; 
+                  border: 3px solid ${iconInfo.border}; box-shadow: 0 3px 10px rgba(0,0,0,0.35); text-shadow: 0 0 3px rgba(0,0,0,0.7);">
         ${iconInfo.emoji}
       </div>
     `,
@@ -154,7 +129,7 @@ function addMarkerToCluster(alert) {
 
   const marker = L.marker([lat, lng], { icon: markerIcon });
 
-  // Updated popup with horizontal photo previews
+  // Popup with horizontal photos
   const popupContent = `
     <div style="font-family: Arial, sans-serif; min-width: 320px; max-width: 420px; padding: 8px;">
       <b style="font-size: 1.25em; color: #1a3c6d;">${alert.type?.toUpperCase() || 'OTHER'} – ${alert.area || 'Unknown'}</b><br>
@@ -173,24 +148,21 @@ function addMarkerToCluster(alert) {
           </a>
         </div>
       ` : ''}
-      <!-- Horizontal photo row -->
       <div style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 12px; margin-top: 12px; padding-bottom: 4px;">
-        ${alert.photos ?
+        ${alert.photos ? 
           alert.photos.split(',').map((url, i) => {
-            const trimmedUrl = url.trim();
-            return trimmedUrl ? `
+            const trimmed = url.trim();
+            return trimmed ? `
               <div style="flex: 0 0 160px; width: 160px; text-align: center;">
-                <a href="${trimmedUrl}" target="_blank" style="display: block; text-decoration: none;">
-                  <img src="${trimmedUrl}"
-                       alt="Incident photo ${i+1}"
-                       loading="lazy"
+                <a href="${trimmed}" target="_blank" style="display: block; text-decoration: none;">
+                  <img src="${trimmed}" alt="Incident photo ${i+1}" loading="lazy"
                        style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 1px solid #ccc;"
                        onerror="this.src='https://via.placeholder.com/160x120?text=Image+Not+Found';">
                 </a>
                 <div style="margin-top: 6px; font-size: 0.85em; color: #555;">Photo ${i+1}</div>
               </div>
             ` : '';
-          }).join('')
+          }).join('') 
           : '<div style="color:#777; font-style:italic; text-align:center; margin:12px 0;">No photos attached</div>'}
       </div>
     </div>
@@ -198,172 +170,6 @@ function addMarkerToCluster(alert) {
 
   marker.bindPopup(popupContent);
   marker.options.alertType = typeKey;
-
-  markersCluster.addLayer(marker);
-}
-
-function fitToMarkers() {
-  if (!markersCluster || markersCluster.getLayers().length === 0) return;
-  const bounds = markersCluster.getBounds();
-  if (bounds.isValid()) {
-    window.mapInstance.fitBounds(bounds, { padding: [60, 60] });
-  }
-}    zoomToBoundsOnClick: true,
-
-    iconCreateFunction: function(cluster) {
-      const count = cluster.getChildCount();
-
-      const childMarkers = cluster.getAllChildMarkers();
-      const typeCounts = {};
-      childMarkers.forEach(m => {
-        const t = m.options.alertType || 'other';
-        typeCounts[t] = (typeCounts[t] || 0) + 1;
-      });
-
-      let dominantType = 'other';
-      let maxCount = 0;
-      for (const t in typeCounts) {
-        if (typeCounts[t] > maxCount) {
-          maxCount = typeCounts[t];
-          dominantType = t;
-        }
-      }
-
-      const colorInfo = alertColors[dominantType] || alertColors.other;
-
-      return L.divIcon({
-        html: `
-          <div style="
-            background-color: ${colorInfo.fill};
-            color: white;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-            border: 3px solid ${colorInfo.border};
-            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-            text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
-          ">
-            ${count}
-          </div>
-        `,
-        className: '',
-        iconSize: [44, 44]
-      });
-    }
-  });
-
-  window.mapInstance.addLayer(markersCluster);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19
-  }).addTo(window.mapInstance);
-
-  enableReportClick();
-
-  return window.mapInstance;
-}
-
-function enableReportClick() {
-  if (clickListener) {
-    window.mapInstance.off('click', clickListener);
-  }
-
-  clickListener = function(e) {
-    const lat = e.latlng.lat.toFixed(5);
-    const lng = e.latlng.lng.toFixed(5);
-
-    if (window.tempMarker) {
-      window.mapInstance.removeLayer(window.tempMarker);
-    }
-
-    window.tempMarker = L.circleMarker([lat, lng], {
-      radius: 8,
-      fillColor: "#3388ff",
-      color: "#ffffff",
-      weight: 3,
-      opacity: 1,
-      fillOpacity: 0.8
-    }).addTo(window.mapInstance);
-
-    showAddReportModal(lat, lng);
-  };
-
-  window.mapInstance.on('click', clickListener);
-}
-
-function addMarkerToCluster(alert) {
-  const lat = parseFloat(alert.lat) || -29.85;
-  const lng = parseFloat(alert.lng) || 31.03;
-  const color = alertColors[alert.type?.toLowerCase()] || alertColors.other;
-
-  const marker = L.circleMarker([lat, lng], {
-    radius: 10,
-    fillColor: color.fill,
-    color: color.border,
-    weight: 2,
-    opacity: 1,
-    fillOpacity: 0.8
-  });
-
-  // ────────────────────────────────────────────────
-// UPDATED POPUP – shows clickable thumbnail previews for all photos
-// Assumes photos are comma-separated URLs in column H (alert.photos)
-// ────────────────────────────────────────────────
-const popupContent = `
-  <div style="font-family: Arial, sans-serif; min-width: 320px; max-width: 420px; padding: 8px;">
-    <b style="font-size: 1.25em; color: #1a3c6d;">${alert.type?.toUpperCase() || 'OTHER'} – ${alert.area || 'Unknown'}</b><br>
-    <small style="color: #555;">${alert.timestamp || '—'}</small><br><br>
-
-    <div style="margin-bottom: 12px; line-height: 1.5;">
-      ${alert.description ? alert.description.substring(0, 160) + (alert.description.length > 160 ? '…' : '') : 'No description provided'}
-    </div>
-
-    <div style="margin: 12px 0; font-size: 0.95em; color: #444;">
-      Reporter: ${alert.reporter || 'Anonymous'}<br>
-      Status: <strong>${alert.status}</strong>
-    </div>
-
-    ${alert.social ? `
-      <div style="margin: 12px 0;">
-        <a href="${alert.social}" target="_blank" style="color:#1976d2; text-decoration:none; font-weight:bold;">
-          → X / Social evidence
-        </a>
-      </div>
-    ` : ''}
-
-    <!-- Horizontal photo row – forced wider layout -->
-    <div style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 12px; margin-top: 12px; padding-bottom: 4px;">
-      ${alert.photos ? 
-        alert.photos.split(',').map((url, i) => {
-          const trimmedUrl = url.trim();
-          return trimmedUrl ? `
-            <div style="flex: 0 0 160px; width: 160px; text-align: center;">
-              <a href="${trimmedUrl}" target="_blank" style="display: block; text-decoration: none;">
-                <img src="${trimmedUrl}" 
-                     alt="Incident photo ${i+1}" 
-                     loading="lazy"
-                     style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 1px solid #ccc;"
-                     onerror="this.src='https://via.placeholder.com/160x120?text=Image+Not+Found'; this.alt='Failed to load photo';">
-              </a>
-              <div style="margin-top: 6px; font-size: 0.85em; color: #555;">
-                Photo ${i+1}
-              </div>
-            </div>
-          ` : '';
-        }).join('') 
-        : '<div style="color:#777; font-style:italic; text-align:center; margin:12px 0;">No photos attached</div>'}
-    </div>
-  </div>
-`;
-
-  marker.bindPopup(popupContent);
-  marker.options.alertType = alert.type?.toLowerCase() || 'other';
   markersCluster.addLayer(marker);
 }
 
