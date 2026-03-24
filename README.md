@@ -43,8 +43,9 @@ Timestamp | Type | Area | Reporter | Description | Lat | Lng | PhotoURL | Status
 5. Delete any existing code and paste the full `Code.gs`
 6.
 7. **content**
-8.
-9.10. // =================================================================
+
+
+// =================================================================
 // ZA Incident Tracker - Full Apps Script Code.gs
 // All actions: get-alerts, submit-alert, update-status, camera management
 // Photos: comma-separated URLs in column H of Sheet1
