@@ -83,29 +83,33 @@ function addLegendWithFilters() {
 
   legend.onAdd = function() {
     const div = L.DomUtil.create('div', 'legend-container');
-    div.style.background = 'white';
-    div.style.padding = '12px 14px';
-    div.style.borderRadius = '8px';
-    div.style.boxShadow = '0 3px 12px rgba(0,0,0,0.25)';
-    div.style.minWidth = '260px';
+    div.style.background = 'rgba(255,255,255,0.95)';
+    div.style.padding = '10px 14px';
+    div.style.borderRadius = '10px';
+    div.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+    div.style.minWidth = '240px';
+    div.style.maxWidth = '280px';
     div.style.fontFamily = 'Arial, sans-serif';
+    div.style.fontSize = '0.95em';
     div.style.userSelect = 'none';
+    div.style.maxHeight = '80vh';
+    div.style.overflowY = 'auto';
 
     div.innerHTML = `
-      <div style="font-weight:bold; margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" id="legend-header">
+      <div id="legend-header" style="font-weight:bold; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid #eee;">
         <span>🔍 Filter Incidents</span>
-        <span id="legend-toggle">▼</span>
+        <span id="legend-toggle" style="font-size:1.1em;">▼</span>
       </div>
-      <div id="legend-body" style="display:none;">
+      <div id="legend-body" style="display:none; padding-top:10px;">
         <!-- Type Filters -->
-        <div style="margin-bottom:15px;">
-          <strong>Incident Type</strong><br>
+        <div style="margin-bottom:16px;">
+          <strong style="display:block; margin-bottom:8px;">Incident Type</strong>
           ${Object.keys(alertIcons).map(type => {
             const info = alertIcons[type];
             return `
-              <label style="display:flex; align-items:center; gap:8px; margin:6px 0; font-size:0.95em; cursor:pointer;">
-                <input type="checkbox" value="${type}" checked style="accent-color: ${info.color};">
-                <span style="font-size:1.3em;">${info.emoji}</span>
+              <label style="display:flex; align-items:center; gap:10px; margin:8px 0; cursor:pointer;">
+                <input type="checkbox" value="${type}" checked style="accent-color: ${info.color}; width:18px; height:18px;">
+                <span style="font-size:1.35em;">${info.emoji}</span>
                 <span>${info.label}</span>
               </label>
             `;
@@ -113,18 +117,16 @@ function addLegendWithFilters() {
         </div>
 
         <!-- Date Range Slider -->
-        <div>
-          <strong>Date Range</strong>
-          <div style="margin:10px 0;">
-            <input type="range" id="date-slider" min="0" max="90" value="90" step="1" style="width:100%;">
-            <div style="display:flex; justify-content:space-between; font-size:0.85em; color:#555; margin-top:4px;">
-              <span id="date-label">Last 90 days</span>
-              <span>All time</span>
-            </div>
+        <div style="margin-bottom:16px;">
+          <strong style="display:block; margin-bottom:8px;">Date Range</strong>
+          <input type="range" id="date-slider" min="0" max="90" value="90" step="1" style="width:100%; accent-color:#006633;">
+          <div style="display:flex; justify-content:space-between; font-size:0.85em; color:#555; margin-top:6px;">
+            <span id="date-label">Last 90 days</span>
+            <span>All time</span>
           </div>
         </div>
 
-        <button id="reset-filters" style="margin-top:15px; width:100%; padding:10px; background:#006633; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
+        <button id="reset-filters" style="width:100%; padding:11px; background:#006633; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:8px;">
           Reset All Filters
         </button>
       </div>
@@ -133,10 +135,12 @@ function addLegendWithFilters() {
     L.DomEvent.disableClickPropagation(div);
     L.DomEvent.disableScrollPropagation(div);
 
-    // Toggle legend
-    div.querySelector('#legend-header').addEventListener('click', () => {
-      const body = div.querySelector('#legend-body');
-      const toggle = div.querySelector('#legend-toggle');
+    // Toggle
+    const header = div.querySelector('#legend-header');
+    const body = div.querySelector('#legend-body');
+    const toggle = div.querySelector('#legend-toggle');
+
+    header.addEventListener('click', () => {
       if (body.style.display === 'none') {
         body.style.display = 'block';
         toggle.textContent = '▲';
@@ -154,17 +158,19 @@ function addLegendWithFilters() {
     // Date slider
     const slider = div.querySelector('#date-slider');
     const label = div.querySelector('#date-label');
-    slider.addEventListener('input', () => {
-      const days = parseInt(slider.value);
-      label.textContent = days === 90 ? "Last 90 days" : `Last ${days} days`;
-      applyFilters();
-    });
+    if (slider && label) {
+      slider.addEventListener('input', () => {
+        const days = parseInt(slider.value);
+        label.textContent = days === 90 ? "Last 90 days" : `Last ${days} days`;
+        applyFilters();
+      });
+    }
 
     // Reset button
     div.querySelector('#reset-filters').addEventListener('click', () => {
       div.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
-      slider.value = 90;
-      label.textContent = "Last 90 days";
+      if (slider) slider.value = 90;
+      if (label) label.textContent = "Last 90 days";
       applyFilters();
     });
 
@@ -215,10 +221,9 @@ function applyFilters() {
   fitToMarkers();
 }
 
-// Robust date parser for Google Sheets timestamps
+// Robust date parser
 function parseGoogleDateToMs(timestamp) {
   if (!timestamp) return null;
-
   let date = new Date(timestamp);
   if (!isNaN(date.getTime())) return date.getTime();
 
@@ -265,7 +270,7 @@ function addMarkerToCluster(alert) {
 
   const marker = L.marker([lat, lng], { icon: markerIcon });
 
-  // === YOUR ORIGINAL POPUP (restored) ===
+  // Your original popup (restored)
   const popupContent = `
     <div style="font-family: Arial, sans-serif; min-width: 320px; max-width: 420px; padding: 8px;">
       <b style="font-size: 1.25em; color: #1a3c6d;">${alert.type?.toUpperCase() || 'OTHER'} – ${alert.area || 'Unknown'}</b><br>
@@ -308,7 +313,7 @@ function addMarkerToCluster(alert) {
 
   marker.bindPopup(popupContent);
   marker.options.alertType = typeKey;
-  marker.options.timestamp = alert.timestamp;   // ← Critical for date filter!
+  marker.options.timestamp = alert.timestamp;   // Critical for date filter
 
   allMarkers.push(marker);
   markersCluster.addLayer(marker);
