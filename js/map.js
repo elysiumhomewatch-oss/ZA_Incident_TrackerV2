@@ -190,36 +190,63 @@ function applyFilters() {
 
   // Get current slider value
   const slider = document.getElementById('date-slider');
-  timeFilterDays = slider ? parseInt(slider.value) : 90;
+  const days = slider ? parseInt(slider.value) : 90;
+  timeFilterDays = days;
+
+  console.log(`Applying filters → Types: ${checkedTypes.size || 'All'}, Days: ${days}`);
 
   markersCluster.clearLayers();
+
+  let shown = 0;
 
   allMarkers.forEach(marker => {
     const type = marker.options.alertType || 'other';
     const typeMatch = checkedTypes.size === 0 || checkedTypes.has(type);
 
     let timeMatch = true;
-    if (timeFilterDays < 90 && marker.options.timestamp) {
-      const alertTime = parseGoogleDateToMs(marker.options.timestamp);
-      if (alertTime) {
-        const daysOld = (Date.now() - alertTime) / (1000 * 60 * 60 * 24);
-        timeMatch = daysOld <= timeFilterDays;
+    if (days < 90 && marker.options.timestamp) {
+      const alertTimeMs = parseGoogleDateToMs(marker.options.timestamp);
+      if (alertTimeMs) {
+        const daysOld = (Date.now() - alertTimeMs) / (1000 * 60 * 60 * 24);
+        timeMatch = daysOld <= days;
+      } else {
+        timeMatch = false;   // invalid date → hide
       }
     }
 
     if (typeMatch && timeMatch) {
       markersCluster.addLayer(marker);
+      shown++;
     }
   });
 
+  console.log(`Filtered result: ${shown} markers shown`);
   fitToMarkers();
 }
 
 // Helper to parse Google Sheets timestamp
+// Robust date parser for Google Sheets timestamps
 function parseGoogleDateToMs(timestamp) {
   if (!timestamp) return null;
-  const date = new Date(timestamp);
-  return isNaN(date.getTime()) ? null : date.getTime();
+
+  // Try direct Date constructor (works for ISO strings and many Google formats)
+  let date = new Date(timestamp);
+  if (!isNaN(date.getTime())) return date.getTime();
+
+  // Fallback: try to clean common Google string formats
+  const cleaned = timestamp.toString().trim();
+  date = new Date(cleaned);
+  if (!isNaN(date.getTime())) return date.getTime();
+
+  // Last resort: if it's a number (rare), treat as milliseconds or Excel serial
+  if (!isNaN(Number(cleaned))) {
+    const num = Number(cleaned);
+    if (num > 1000000000000) return num;                    // Unix ms
+    if (num > 40000) return (num - 25569) * 86400000;      // Excel serial date
+  }
+
+  console.warn("Could not parse timestamp:", timestamp);
+  return null;
 }
 
 function applyFilters() {
@@ -233,6 +260,7 @@ function applyFilters() {
   allMarkers.forEach(marker => {
     const type = marker.options.alertType || 'other';
     if (checkedTypes.size === 0 || checkedTypes.has(type)) {
+      marker.options.timestamp = alert.timestamp;   // Critical for date filtering
       markersCluster.addLayer(marker);
     }
   });
