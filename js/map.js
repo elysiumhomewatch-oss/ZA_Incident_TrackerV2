@@ -188,7 +188,13 @@ function addMarkerToCluster(alert) {
   const iconInfo = alertIcons[typeKey] || alertIcons.other;
 
   const markerIcon = L.divIcon({
-    html: `<div style="background:${iconInfo.color}; color:white; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:3px solid ${iconInfo.border}; box-shadow:0 3px 10px rgba(0,0,0,0.35);">${iconInfo.emoji}</div>`,
+    html: `
+      <div style="background:${iconInfo.color}; color:white; width:38px; height:38px; border-radius:50%; 
+                  display:flex; align-items:center; justify-content:center; font-size:20px; 
+                  border:3px solid ${iconInfo.border}; box-shadow:0 3px 10px rgba(0,0,0,0.35); text-shadow:0 0 3px rgba(0,0,0,0.7);">
+        ${iconInfo.emoji}
+      </div>
+    `,
     className: '',
     iconSize: [38, 38],
     iconAnchor: [19, 19]
@@ -196,13 +202,58 @@ function addMarkerToCluster(alert) {
 
   const marker = L.marker([lat, lng], { icon: markerIcon });
 
-  // Your existing popup content (kept the same)
-  const popupContent = `... your current popup HTML ...`;   // ← keep your existing popupContent here
+  // ────────────────────────────────────────────────
+  // YOUR ORIGINAL POPUP (restored + improved)
+  // ────────────────────────────────────────────────
+  const popupContent = `
+    <div style="font-family: Arial, sans-serif; min-width: 320px; max-width: 420px; padding: 8px;">
+      <b style="font-size: 1.25em; color: #1a3c6d;">${alert.type?.toUpperCase() || 'OTHER'} – ${alert.area || 'Unknown'}</b><br>
+      <small style="color: #555;">${alert.timestamp || '—'}</small><br><br>
+
+      <div style="margin-bottom: 12px; line-height: 1.5;">
+        ${alert.description ? alert.description.substring(0, 160) + (alert.description.length > 160 ? '…' : '') : 'No description provided'}
+      </div>
+
+      <div style="margin: 12px 0; font-size: 0.95em; color: #444;">
+        Reporter: ${alert.reporter || 'Anonymous'}<br>
+        Status: <strong>${alert.status}</strong>
+      </div>
+
+      ${alert.social ? `
+        <div style="margin: 12px 0;">
+          <a href="${alert.social}" target="_blank" style="color:#1976d2; text-decoration:none; font-weight:bold;">
+            → X / Social evidence
+          </a>
+        </div>
+      ` : ''}
+
+      <!-- Horizontal photo thumbnails -->
+      <div style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 12px; margin-top: 12px; padding-bottom: 4px;">
+        ${alert.photos ?
+          alert.photos.split(',').map((url, i) => {
+            const trimmedUrl = url.trim();
+            return trimmedUrl ? `
+              <div style="flex: 0 0 160px; width: 160px; text-align: center;">
+                <a href="${trimmedUrl}" target="_blank" style="display: block; text-decoration: none;">
+                  <img src="${trimmedUrl}"
+                       alt="Incident photo ${i+1}"
+                       loading="lazy"
+                       style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 1px solid #ccc;"
+                       onerror="this.src='https://via.placeholder.com/160x120?text=Image+Not+Found';">
+                </a>
+                <div style="margin-top: 6px; font-size: 0.85em; color: #555;">Photo ${i+1}</div>
+              </div>
+            ` : '';
+          }).join('')
+          : '<div style="color:#777; font-style:italic; text-align:center; margin:12px 0;">No photos attached</div>'}
+      </div>
+    </div>
+  `;
 
   marker.bindPopup(popupContent);
   marker.options.alertType = typeKey;
 
-  allMarkers.push(marker);        // Store for filtering
+  allMarkers.push(marker);
   markersCluster.addLayer(marker);
 }
 
