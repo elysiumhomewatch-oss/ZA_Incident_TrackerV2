@@ -167,7 +167,7 @@
   <script src="js/map.js"></script>
   <script src="js/public.js"></script>
 
-  <!-- Click-to-Report Confirmation Modal -->
+   <!-- Click-to-Report Confirmation Modal -->
   <div id="add-report-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:2000; justify-content:center; align-items:center; font-family:Arial,Helvetica,sans-serif;">
     <div style="background:#fff; padding:28px; border-radius:10px; max-width:460px; width:92%; box-shadow:0 12px 40px rgba(0,0,0,0.35);">
       <h3 style="margin-top:0; color:#1a3c6d;">Add new report at this location?</h3>
@@ -191,7 +191,7 @@
     </div>
   </div>
 
-  <!-- Inline script for camera/gallery open functions -->
+  <!-- Safe inline script for camera/gallery and previews -->
   <script>
     function openCamera(slot) {
       const input = document.getElementById(`photo${slot}-camera`);
@@ -203,13 +203,14 @@
       if (input) input.click();
     }
 
-    // Auto-show previews when files are selected
-    document.querySelectorAll('input[type="file"]').forEach(input => {
+    // Safe preview handler - only run on photo inputs
+    document.querySelectorAll('input[id^="photo"][id$="-camera"], input[id^="photo"][id$="-gallery"]').forEach(input => {
       input.addEventListener('change', () => {
-        const slot = input.id.match(/\d+$/)[0];
         const file = input.files[0];
         if (file) {
           const previewDiv = document.getElementById('photo-preview');
+          if (!previewDiv) return;
+
           const img = document.createElement('img');
           img.src = URL.createObjectURL(file);
           img.style.width = '80px';
@@ -217,7 +218,6 @@
           img.style.objectFit = 'cover';
           img.style.borderRadius = '6px';
           img.style.border = '2px solid #006633';
-          img.title = `Photo ${slot}`;
           previewDiv.appendChild(img);
         }
       });
