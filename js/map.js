@@ -78,43 +78,50 @@ function initMap(containerId = 'map') {
   return window.mapInstance;
 }
 
+
 // Collapsible Legend with Checkboxes (Live Filtering)
 function addLegendWithFilters() {
   const legend = L.control({ position: 'topright' });
 
-  legend.onAdd = function() {
+  legend.onAdd = function(map) {
     const div = L.DomUtil.create('div', 'legend-container');
     div.style.background = 'white';
-    div.style.padding = '10px';
+    div.style.padding = '10px 14px';
     div.style.borderRadius = '8px';
-    div.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-    div.style.minWidth = '220px';
+    div.style.boxShadow = '0 2px 12px rgba(0,0,0,0.25)';
+    div.style.minWidth = '230px';
     div.style.fontFamily = 'Arial, sans-serif';
+    div.style.userSelect = 'none';
 
     div.innerHTML = `
       <div style="font-weight:bold; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" id="legend-header">
-        <span>🔍 Filter Incidents</span>
+        <span>🔍 Filter Incident Types</span>
         <span id="legend-toggle">▼</span>
       </div>
       <div id="legend-body" style="display:none;">
         ${Object.keys(alertIcons).map(type => {
           const info = alertIcons[type];
           return `
-            <label style="display:flex; align-items:center; gap:8px; margin:6px 0; font-size:0.95em; cursor:pointer;">
-              <input type="checkbox" value="${type}" checked style="accent-color: ${info.color};">
-              <span style="font-size:1.3em;">${info.emoji}</span>
+            <label style="display:flex; align-items:center; gap:8px; margin:8px 0; font-size:0.95em; cursor:pointer;">
+              <input type="checkbox" value="${type}" checked style="accent-color: ${info.color}; transform:scale(1.2);">
+              <span style="font-size:1.4em;">${info.emoji}</span>
               <span>${info.label}</span>
             </label>
           `;
         }).join('')}
-        <button id="reset-filters" style="margin-top:10px; width:100%; padding:8px; background:#006633; color:white; border:none; border-radius:6px; cursor:pointer;">
+        <button id="reset-filters" style="margin-top:12px; width:100%; padding:10px; background:#006633; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
           Show All Types
         </button>
       </div>
     `;
 
+    // === IMPORTANT: Prevent clicks inside legend from triggering map click ===
+    L.DomEvent.disableClickPropagation(div);
+    L.DomEvent.disableScrollPropagation(div);
+
     // Toggle collapse
-    div.querySelector('#legend-header').addEventListener('click', () => {
+    div.querySelector('#legend-header').addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
       const body = div.querySelector('#legend-body');
       const toggle = div.querySelector('#legend-toggle');
       if (body.style.display === 'none') {
@@ -132,7 +139,8 @@ function addLegendWithFilters() {
     });
 
     // Reset button
-    div.querySelector('#reset-filters').addEventListener('click', () => {
+    div.querySelector('#reset-filters').addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
       div.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
       applyFilters();
     });
