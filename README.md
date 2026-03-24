@@ -1,4 +1,4 @@
-# ZA Incident Tracker – AfriForum Community Safety Dashboard
+# ZA Incident Tracker – Community Safety Dashboard
 
 A modern, mobile-friendly web application for reporting and monitoring incidents in South Africa, with a strong focus on Durban and KwaZulu-Natal.
 
