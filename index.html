@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <title>ZA Incident Tracker • Public</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    #map { 
+      height: 55vh; 
+      min-height: 300px; 
+      max-height: 620px; 
+      margin: 20px auto; 
+      width: 100%; 
+    }
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      form { padding: 15px; }
+      input, textarea, select, button {
+        font-size: 1.1em;
+        padding: 12px;
+        min-height: 48px;
+      }
+      .submit-btn { width: 100%; }
+      #submit-message { font-size: 1.1em; }
+      label { font-size: 1.05em; }
+      .photo-slot { margin-bottom: 20px; }
+      .photo-buttons { flex-direction: column; gap: 10px; }
+    }
+    .photo-buttons button {
+      flex: 1;
+      min-height: 54px;
+    }
+    #photo-preview img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 2px solid #006633;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="color: var(--afriforum-red);">AfriForum Incident Tracker • Durban / KZN</h1>
+  <p style="text-align:center">Only moderator-approved incidents shown • Submit below → waits for review</p>
+
+  <div id="map"></div>
+
+  <details style="max-width:800px; margin:20px auto; background:white; padding:15px; border-radius:8px;">
+    <summary style="font-weight:bold; cursor:pointer;">Submit New Report (Anonymous)</summary>
+
+    <div style="max-width:700px; margin:30px auto; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+      <h2 style="text-align:center; color:#C8102E;">Submit New Report (Anonymous)</h2>
+      <p style="text-align:center; color:#555; font-size:0.95em;">
+        Your report will be reviewed before appearing on the map.
+      </p>
+
+      <form id="submit-report-form">
+        <label for="type">Incident Type *</label>
+        <select id="type" name="type" required>
+          <option value="">-- Select type --</option>
+          <option value="crime">Crime (theft, hijacking, shooting, etc.)</option>
+          <option value="protest">Protest / March / Demonstration</option>
+          <option value="mass-action">Mass Action / Strike / Blockade</option>
+          <option value="riot">Riot / Looting / Civil Unrest</option>
+          <option value="disruption">Major Disruption (road block, shutdown)</option>
+          <option value="suspicious">Suspicious Activity / Gathering</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label for="area">Area / Suburb / Landmark *</label>
+        <input type="text" id="area" name="area" placeholder="e.g. Durban CBD, Umlazi V, Pinetown" required>
+
+        <label for="description">Description of what you saw / heard *</label>
+        <textarea id="description" name="description" rows="5" placeholder="What happened? When? Any details..." required></textarea>
+
+        <div style="display:flex; gap:15px; flex-wrap:wrap;">
+          <div style="flex:1;">
+            <label for="lat">Approximate Latitude (optional)</label>
+            <input type="number" step="any" id="lat" name="lat" placeholder="-29.858">
+          </div>
+          <div style="flex:1;">
+            <label for="lng">Approximate Longitude (optional)</label>
+            <input type="number" step="any" id="lng" name="lng" placeholder="31.021">
+          </div>
+        </div>
+
+        <!-- Mobile-optimized photo upload with separate camera/gallery buttons -->
+        <div style="margin:25px 0;">
+          <label style="display:block; font-weight:600; margin-bottom:12px;">Attach Photos (up to 3 – optional)</label>
+
+          <div style="display:flex; flex-direction:column; gap:18px;">
+            <!-- Photo 1 -->
+            <div class="photo-slot">
+              <div class="photo-buttons" style="display:flex; gap:12px;">
+                <button type="button" onclick="openCamera(1)" 
+                        style="flex:1; padding:16px; background:#006633; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  📸 Photo 1 – Take Photo
+                </button>
+                <button type="button" onclick="openGallery(1)" 
+                        style="flex:1; padding:16px; background:#F15A24; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  🖼️ Photo 1 – Choose from Gallery
+                </button>
+              </div>
+              <input type="file" id="photo1-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="photo1-gallery" accept="image/*" style="display:none;">
+            </div>
+
+            <!-- Photo 2 -->
+            <div class="photo-slot">
+              <div class="photo-buttons" style="display:flex; gap:12px;">
+                <button type="button" onclick="openCamera(2)" 
+                        style="flex:1; padding:16px; background:#006633; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  📸 Photo 2 – Take Photo
+                </button>
+                <button type="button" onclick="openGallery(2)" 
+                        style="flex:1; padding:16px; background:#F15A24; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  🖼️ Photo 2 – Choose from Gallery
+                </button>
+              </div>
+              <input type="file" id="photo2-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="photo2-gallery" accept="image/*" style="display:none;">
+            </div>
+
+            <!-- Photo 3 -->
+            <div class="photo-slot">
+              <div class="photo-buttons" style="display:flex; gap:12px;">
+                <button type="button" onclick="openCamera(3)" 
+                        style="flex:1; padding:16px; background:#006633; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  📸 Photo 3 – Take Photo
+                </button>
+                <button type="button" onclick="openGallery(3)" 
+                        style="flex:1; padding:16px; background:#F15A24; color:white; border:none; border-radius:8px; font-size:1.05em; min-height:54px;">
+                  🖼️ Photo 3 – Choose from Gallery
+                </button>
+              </div>
+              <input type="file" id="photo3-camera" accept="image/*" capture="environment" style="display:none;">
+              <input type="file" id="photo3-gallery" accept="image/*" style="display:none;">
+            </div>
+          </div>
+
+          <!-- Preview area -->
+          <div id="photo-preview" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:20px;"></div>
+        </div>
+
+        <div style="text-align:center; margin-top:30px;">
+          <button type="submit" class="submit-btn" style="background:#006633; color:white; padding:16px 40px; font-size:1.2em; border:none; border-radius:8px; cursor:pointer; min-height:56px; box-shadow:0 4px 12px rgba(0,102,51,0.4);">
+            Submit Report for Review
+          </button>
+        </div>
+      </form>
+
+      <div id="submit-message" style="margin-top:20px; text-align:center; font-weight:bold; color:#28a745; display:none; font-size:1.1em;">
+        Report submitted successfully — awaiting moderation.
+      </div>
+    </div>
+  </details>
+
+  <script src="js/map.js"></script>
+  <script src="js/public.js"></script>
+
+  <!-- Click-to-Report Confirmation Modal -->
+  <div id="add-report-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:2000; justify-content:center; align-items:center; font-family:Arial,Helvetica,sans-serif;">
+    <div style="background:#fff; padding:28px; border-radius:10px; max-width:460px; width:92%; box-shadow:0 12px 40px rgba(0,0,0,0.35);">
+      <h3 style="margin-top:0; color:#1a3c6d;">Add new report at this location?</h3>
+      
+      <p style="margin:18px 0; font-size:1.05em;">
+        Coordinates selected on map:
+      </p>
+      
+      <p id="modal-coords-display" style="font-family:monospace; background:#f8f9fa; padding:12px; border-radius:6px; border:1px solid #dee2e6; white-space:pre; margin:0 0 24px 0;">
+        Latitude: —\nLongitude: —
+      </p>
+      
+      <div style="display:flex; gap:16px; justify-content:flex-end;">
+        <button id="modal-cancel-btn" style="padding:10px 22px; background:#6c757d; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
+          Cancel
+        </button>
+        <button id="modal-confirm-btn" style="padding:10px 22px; background:#007bff; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
+          Yes – fill form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline script for camera/gallery open functions -->
+  <script>
+    function openCamera(slot) {
+      const input = document.getElementById(`photo${slot}-camera`);
+      if (input) input.click();
+    }
+
+    function openGallery(slot) {
+      const input = document.getElementById(`photo${slot}-gallery`);
+      if (input) input.click();
+    }
+
+    // Auto-show previews when files are selected
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+      input.addEventListener('change', () => {
+        const slot = input.id.match(/\d+$/)[0];
+        const file = input.files[0];
+        if (file) {
+          const previewDiv = document.getElementById('photo-preview');
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          img.style.width = '80px';
+          img.style.height = '80px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '6px';
+          img.style.border = '2px solid #006633';
+          img.title = `Photo ${slot}`;
+          previewDiv.appendChild(img);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
