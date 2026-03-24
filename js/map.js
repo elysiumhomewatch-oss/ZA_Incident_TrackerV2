@@ -79,49 +79,66 @@ function initMap(containerId = 'map') {
 }
 
 
-// Collapsible Legend with Checkboxes (Live Filtering)
+// Collapsible Legend with Checkboxes + Date Range Slider
 function addLegendWithFilters() {
   const legend = L.control({ position: 'topright' });
 
-  legend.onAdd = function(map) {
+  legend.onAdd = function() {
     const div = L.DomUtil.create('div', 'legend-container');
     div.style.background = 'white';
-    div.style.padding = '10px 14px';
+    div.style.padding = '12px 14px';
     div.style.borderRadius = '8px';
-    div.style.boxShadow = '0 2px 12px rgba(0,0,0,0.25)';
-    div.style.minWidth = '230px';
+    div.style.boxShadow = '0 3px 12px rgba(0,0,0,0.25)';
+    div.style.minWidth = '260px';
     div.style.fontFamily = 'Arial, sans-serif';
     div.style.userSelect = 'none';
 
     div.innerHTML = `
-      <div style="font-weight:bold; margin-bottom:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" id="legend-header">
-        <span>🔍 Filter Incident Types</span>
+      <div style="font-weight:bold; margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" id="legend-header">
+        <span>🔍 Filter Incidents</span>
         <span id="legend-toggle">▼</span>
       </div>
+
       <div id="legend-body" style="display:none;">
-        ${Object.keys(alertIcons).map(type => {
-          const info = alertIcons[type];
-          return `
-            <label style="display:flex; align-items:center; gap:8px; margin:8px 0; font-size:0.95em; cursor:pointer;">
-              <input type="checkbox" value="${type}" checked style="accent-color: ${info.color}; transform:scale(1.2);">
-              <span style="font-size:1.4em;">${info.emoji}</span>
-              <span>${info.label}</span>
-            </label>
-          `;
-        }).join('')}
-        <button id="reset-filters" style="margin-top:12px; width:100%; padding:10px; background:#006633; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
-          Show All Types
+        <!-- Type Filters -->
+        <div style="margin-bottom:15px;">
+          <strong>Incident Type</strong><br>
+          ${Object.keys(alertIcons).map(type => {
+            const info = alertIcons[type];
+            return `
+              <label style="display:flex; align-items:center; gap:8px; margin:6px 0; font-size:0.95em; cursor:pointer;">
+                <input type="checkbox" value="${type}" checked style="accent-color: ${info.color};">
+                <span style="font-size:1.3em;">${info.emoji}</span>
+                <span>${info.label}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+
+        <!-- Date Range Slider -->
+        <div>
+          <strong>Date Range</strong>
+          <div style="margin:10px 0;">
+            <input type="range" id="date-slider" min="0" max="90" value="90" step="1" style="width:100%;">
+            <div style="display:flex; justify-content:space-between; font-size:0.85em; color:#555; margin-top:4px;">
+              <span id="date-label">Last 90 days</span>
+              <span>All time</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="reset-filters" style="margin-top:15px; width:100%; padding:10px; background:#006633; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">
+          Reset All Filters
         </button>
       </div>
     `;
 
-    // === IMPORTANT: Prevent clicks inside legend from triggering map click ===
+    // Prevent map clicks when interacting with legend
     L.DomEvent.disableClickPropagation(div);
     L.DomEvent.disableScrollPropagation(div);
 
-    // Toggle collapse
-    div.querySelector('#legend-header').addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
+    // Toggle legend body
+    div.querySelector('#legend-header').addEventListener('click', () => {
       const body = div.querySelector('#legend-body');
       const toggle = div.querySelector('#legend-toggle');
       if (body.style.display === 'none') {
@@ -133,15 +150,26 @@ function addLegendWithFilters() {
       }
     });
 
-    // Filter logic
+    // Type checkbox listeners
     div.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', applyFilters);
     });
 
+    // Date slider listener
+    const slider = div.querySelector('#date-slider');
+    const label = div.querySelector('#date-label');
+
+    slider.addEventListener('input', () => {
+      const days = parseInt(slider.value);
+      label.textContent = days === 90 ? "Last 90 days" : `Last ${days} days`;
+      applyFilters();
+    });
+
     // Reset button
-    div.querySelector('#reset-filters').addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
+    div.querySelector('#reset-filters').addEventListener('click', () => {
       div.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+      slider.value = 90;
+      label.textContent = "Last 90 days";
       applyFilters();
     });
 
@@ -149,6 +177,49 @@ function addLegendWithFilters() {
   };
 
   legend.addTo(window.mapInstance);
+}
+
+// Global variable for current date filter (in days)
+let timeFilterDays = 90;   // default = last 90 days
+
+function applyFilters() {
+  const checkedTypes = new Set();
+  document.querySelectorAll('.legend-container input[type="checkbox"]:checked').forEach(cb => {
+    checkedTypes.add(cb.value);
+  });
+
+  // Get current slider value
+  const slider = document.getElementById('date-slider');
+  timeFilterDays = slider ? parseInt(slider.value) : 90;
+
+  markersCluster.clearLayers();
+
+  allMarkers.forEach(marker => {
+    const type = marker.options.alertType || 'other';
+    const typeMatch = checkedTypes.size === 0 || checkedTypes.has(type);
+
+    let timeMatch = true;
+    if (timeFilterDays < 90 && marker.options.timestamp) {
+      const alertTime = parseGoogleDateToMs(marker.options.timestamp);
+      if (alertTime) {
+        const daysOld = (Date.now() - alertTime) / (1000 * 60 * 60 * 24);
+        timeMatch = daysOld <= timeFilterDays;
+      }
+    }
+
+    if (typeMatch && timeMatch) {
+      markersCluster.addLayer(marker);
+    }
+  });
+
+  fitToMarkers();
+}
+
+// Helper to parse Google Sheets timestamp
+function parseGoogleDateToMs(timestamp) {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  return isNaN(date.getTime()) ? null : date.getTime();
 }
 
 function applyFilters() {
