@@ -46,7 +46,7 @@ Timestamp | Type | Area | Reporter | Description | Lat | Lng | PhotoURL | Status
 
 
 // =================================================================
-// ZA Incident Tracker - Full Apps Script Code.gs
+//ZA Incident Tracker - Full Apps Script Code.gs
 // All actions: get-alerts, submit-alert, update-status, camera management
 // Photos: comma-separated URLs in column H of Sheet1
 // Cameras: stored in separate "Cameras" sheet (ID, Name, URL, Added)
